@@ -1,5 +1,4 @@
-import React, { useState, useRef, useCallback, createContext } from 'react';
-import axios from 'axios';
+import React, { useState, useRef, createContext } from 'react';
 import {
   ChakraProvider,
   Box,
@@ -7,6 +6,7 @@ import {
   theme,
   Container,
   Grid,
+  Link,
 } from '@chakra-ui/react';
 import { ColorModeSwitcher } from './ColorModeSwitcher';
 import { TodayMemoized } from './components/Today';
@@ -14,6 +14,7 @@ import { ForecsatListMemoized } from './components/ForecastList';
 import { TimeTableList } from './components/TimeTableList';
 import { Search } from './components/Search';
 import { LocationMemoized } from './components/Location';
+import { useFetchData } from './hooks/useFetchData';
 
 const ForecastContext = createContext(undefined);
 
@@ -24,32 +25,13 @@ function App() {
   const [perHourList, setPerHourList] = useState(undefined);
   const [active, setActive] = useState(undefined);
 
-  const submitHandler = useCallback(
-    e => {
-      e.preventDefault();
-      if (searchedPlace.length > 3) {
-        axios
-          .get('https://api.weatherapi.com/v1/forecast.json', {
-            params: {
-              key: 'bae68f473c254769b3275439231210',
-              q: searchedPlace,
-              days: 3,
-              aqi: 'no',
-              alert: 'no',
-            },
-          })
-          .then(response => {
-            response.data.forecast.forecastday[0].isToday = true;
-            setFetchedData(response.data);
-            setActive(response.data.forecast.forecastday[0].date);
-            setPerHourList(response.data.forecast.forecastday[0]);
-            localDateRef.current = new Date(response.data.location.localtime);
-          })
-          .catch(error => console.error(error));
-      }
-    },
-    [searchedPlace]
-  );
+  const submitHandler = useFetchData({
+    searchedPlace,
+    setFetchedData,
+    setActive,
+    setPerHourList,
+    localDateRef,
+  });
 
   const inputChange = e => {
     setSearchedPlace(e.target.value);
@@ -61,7 +43,7 @@ function App() {
 
   return (
     <ChakraProvider theme={theme}>
-      <Box minH="100vh" p={3}>
+      <Box minH="90vh" p={3}>
         <Box textAlign="right">
           <ColorModeSwitcher />
         </Box>
@@ -104,6 +86,12 @@ function App() {
             )}
           </Container>
         </VStack>
+      </Box>
+      <Box textAlign="center" padding="2rem 0 1rem">
+        Powered by{' '}
+        <Link href="https://www.weatherapi.com/" title="Free Weather API">
+          WeatherAPI.com
+        </Link>
       </Box>
     </ChakraProvider>
   );
